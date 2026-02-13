@@ -2,6 +2,7 @@ import io
 import zipfile
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
@@ -110,7 +111,7 @@ def compute_outputs(
     genesys_file,
     history_file,
 ) -> Tuple[Dict[str, int], pd.DataFrame, pd.DataFrame, pd.DataFrame, str, str]:
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("America/Mexico_City"))
     today = now.date()
     run_ts = now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -354,8 +355,9 @@ def main() -> None:
         """
 ### Como usar esta UI
 1. Descarga desde Genesys el CSV de Telesales del dia.
-2. Carga ese CSV. El CSV historico es opcional.
-3. Haz clic en **Generar paquete final (.zip)** y descarga el ZIP unico con los 3 entregables.
+2. Carga tambien el historico mas reciente que tengas, llamado `sent_history_dd-mm-yyyy.csv`.
+3. Si no lo encuentras, puedes continuar sin historico y la app creara uno nuevo con la data del dia.
+4. Haz clic en **Generar paquete final (.zip)** y descarga el ZIP unico con los 3 entregables.
 """
     )
 
@@ -363,7 +365,7 @@ def main() -> None:
         """
 ### Que obtendras al final
 - `1_campaign_wa_dd-mm-yyyy.xlsx`: archivo para cargar WhatsApp (sin encabezado).
-- `sent_history_dd-mm-yyyy.csv`: historico oficial para Risk/Analytics. Si no cargas uno, se crea uno nuevo con la corrida del dia.
+- `sent_history_dd-mm-yyyy.csv`: historico oficial para Risk/Analytics. Debes usar siempre el mas reciente.
 - `audit_campaign_dd-mm-yyyy-hhmm.xlsx`: snapshot completo del dia con filtros y motivo de descarte/seleccion.
 """
     )
@@ -389,7 +391,12 @@ def main() -> None:
         accept_multiple_files=False,
     )
 
-    st.caption("Si no tienes historico o lo perdiste, la app generara uno nuevo con la data de hoy.")
+    st.caption(
+        "Recomendado: sube el archivo `sent_history_...` mas reciente para respetar cooldown de 7 dias y evitar reenvios a clientes ya contactados por WhatsApp."
+    )
+    st.warning(
+        "Si no subes el historico, la app no podra bloquear clientes contactados en los ultimos 7 dias y podrias volver a enviarles mensaje."
+    )
 
     with st.expander("Reglas aplicadas", expanded=False):
         st.markdown(
